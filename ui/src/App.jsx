@@ -26,25 +26,17 @@ function App() {
     })
       .then(function (response) {
         console.log(response);
-        if(response.status === 200){
           setSuccessAlert({
             status: true,
             msg: response.data?.result?.MessageId
-          });
-        }else{
-          setFailureAlert({
-            status: true,
-            error: response.data?.error
-          });
-          console.log(response.data?.error);
-        }   
+          }); 
       })
       .catch(function (error) {
+        console.log(error);
         setFailureAlert({
           status: true,
           error: error.error
         });
-        console.log(error);
       });
   }
 
