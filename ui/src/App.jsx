@@ -36,7 +36,7 @@ function App() {
             status: true,
             error: response.data?.error
           });
-          console.log(error);
+          console.log(response.data?.error);
         }   
       })
       .catch(function (error) {
