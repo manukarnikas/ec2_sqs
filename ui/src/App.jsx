@@ -20,7 +20,7 @@ function App() {
 
   const publishMessage = (data) => {
     console.log('in publish message')
-    const url = "http://localhost:3008"
+    const url = process.env.REACT_APP_BASE_URL;
     axios.post(`${url}/publishMessage`, {
       msg: data
     })
