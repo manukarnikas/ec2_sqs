@@ -35,7 +35,7 @@ function App() {
         console.log(error);
         setFailureAlert({
           status: true,
-          error: error.error
+          error: error.data?.error
         });
       });
   }
