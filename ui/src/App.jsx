@@ -25,11 +25,19 @@ function App() {
       msg: data
     })
       .then(function (response) {
-        setSuccessAlert({
-          status: true,
-          msg: response.data?.result?.MessageId
-        });
         console.log(response);
+        if(response.status === 200){
+          setSuccessAlert({
+            status: true,
+            msg: response.data?.result?.MessageId
+          });
+        }else{
+          setFailureAlert({
+            status: true,
+            error: error.error
+          });
+          console.log(error);
+        }   
       })
       .catch(function (error) {
         setFailureAlert({
