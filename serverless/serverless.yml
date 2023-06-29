@@ -1,0 +1,42 @@
+service: Message-Processor-Lambda-Service
+
+custom:
+  region: ap-south-1
+  accountId: 518911849289
+  functionName: message-processor-lambda-function
+  writeEnvVars:
+    REGION: ${self:custom.region}
+    SACCOUNT_ID: ${self:custom.accountId}
+    FUNCTION_NAME: ${self:custom.functionName}
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  region: ${self:custom.region}
+
+functions:
+  message-processor-lambda-function:
+    handler: ./handler.handler
+    events:
+      - sqs:
+          queue:
+            name: message-processor
+
+iam:
+  role:
+    statements:
+      - Effect: Allow
+        Action: 
+          - logs: CreateLogGroup
+          - logs: CreateLogStream
+          - logs: PutLogEvents
+        Resource: arn:aws:logs:${self:custom.region}:${self:custom.accountId}:function:${self:custom.functionName}
+
+plugins:
+  - serverless-plugin-write-env-vars
+
+# environment:
+#   variables:
+#     REGION: ap-south-1
+#     ACCOUNT_ID: 518911849289
+#     FUNCTION_NAME: message-processor-lambda-function
