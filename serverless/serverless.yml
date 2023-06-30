@@ -1,9 +1,9 @@
-service: Message-Processor-Lambda-Service
+service: MessageProcessorLambdaService
 
 custom:
-  region: ap-south-1
-  accountId: 518911849289
-  functionName: message-processor-lambda-function
+  region: <region>
+  accountId: <accountId>
+  functionName: MessageProcessorLambdaFunction
   writeEnvVars:
     REGION: ${self:custom.region}
     SACCOUNT_ID: ${self:custom.accountId}
@@ -13,30 +13,31 @@ provider:
   name: aws
   runtime: nodejs14.x
   region: ${self:custom.region}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+      Resource: arn:aws:logs:${self:custom.region}:${self:custom.accountId}:log-group:/aws/lambda/${self:service}-${self:custom.functionName}
+
 
 functions:
-  message-processor-lambda-function:
-    handler: ./handler.handler
+  MessageProcessorLambdaFunction:
+    handler: handler.handler
     events:
       - sqs:
-          queue:
-            name: message-processor
+          arn: arn:aws:sqs:${self:custom.region}:${self:custom.accountId}:message-processor
 
-iam:
-  role:
-    statements:
-      - Effect: Allow
-        Action: 
-          - logs: CreateLogGroup
-          - logs: CreateLogStream
-          - logs: PutLogEvents
-        Resource: arn:aws:logs:${self:custom.region}:${self:custom.accountId}:function:${self:custom.functionName}
+#aws creates default log group for lambda and a few other services
+# resources:
+#   Resources:
+#     MessageProcessorLambdaFunctionLogGroup:
+#       Type: AWS::Logs::LogGroup
+#       Properties:
+#         LogGroupName: /aws/lambda/${self:service}-${self:custom.functionName}
+#         RetentionInDays: 30
 
 plugins:
   - serverless-plugin-write-env-vars
 
-# environment:
-#   variables:
-#     REGION: ap-south-1
-#     ACCOUNT_ID: 518911849289
-#     FUNCTION_NAME: message-processor-lambda-function
