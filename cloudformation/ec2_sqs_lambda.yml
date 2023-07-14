@@ -1,0 +1,112 @@
+Resources:
+  MyEc2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0b9ecf71fe947bbdd
+      InstanceType: t2.micro
+      KeyName: dev
+      IamInstanceProfile: !Ref MyInstanceProfile
+      SecurityGroupIds:
+        - !Ref MySecurityGroup
+
+  MySecurityGroup: 
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow ingress on port 3000 and 3008
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3008
+          ToPort: 3008
+          CidrIp: 0.0.0.0/0
+
+  MySQSQueue:
+    Type: AWS::SQS::Queue
+    Properties: 
+      QueueName: message-processor
+
+  MyInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref MyEc2Role
+
+  MyEc2Role:
+    Type: AWS::IAM::Role
+    Properties: 
+      RoleName: ec2-send-message-to-sqs-new-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies: 
+        - PolicyName: ec2-send-message-to-sqs-new-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement: 
+              - Effect: Allow
+                Action: sqs:SendMessage
+                Resource: !GetAtt MySQSQueue.Arn
+
+  MyLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: MessageProcessorLambdaFunction
+      Runtime: nodejs14.x
+      Handler: handler.handler
+      Role: !GetAtt MyLambdaRole.Arn
+      Code:
+        ZipFile: |
+          exports.handler = async (event, context) => {
+            console.log('Received event:', JSON.stringify(event));
+            return {
+              statusCode: 200,
+              body: 'Success',
+            };
+          }
+      Timeout: 30
+  
+  MyLambdaEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      FunctionName: !Ref MyLambdaFunction
+      EventSourceArn: !GetAtt MySQSQueue.Arn
+      BatchSize: 10
+
+  MyLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: lambda-to-cloudwatch-logs-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: lambda-to-cloudwatch-logs
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+              - Effect: Allow
+                Action: 
+                  - sqs:*
+                Resource: !GetAtt  MySQSQueue.Arn
+
+
+
+
+
